@@ -1,6 +1,5 @@
-using System;
-using System.IO.Compression;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class PlayerMove : MonoBehaviour
 {
@@ -10,10 +9,14 @@ public class PlayerMove : MonoBehaviour
     private Rigidbody2D rb;
     [SerializeField] private float speed = 7;
 
+    [SerializeField] private float maxDashSpeed = 15;
+    private float dashSpeed = 1;
+    private bool dashing = false;
+
     private Vector2 dir;
     private bool isMoving = false;
 
-    [SerializeField] private float rayLength = 1.0625f;
+    [SerializeField] private float rayLength = 0.53125f;
 
     private void Awake()
     {
@@ -48,6 +51,28 @@ public class PlayerMove : MonoBehaviour
         else
         {
             anima.SetBool("Walk", true);
+
+            if (Input.GetKey(KeyCode.LeftShift))
+            {
+                Vector2 input = Vector2.zero;
+                if (Input.GetKey(KeyCode.W)) input.y += 1;
+                if (Input.GetKey(KeyCode.S)) input.y -= 1;
+                if (Input.GetKey(KeyCode.A)) input.x -= 1;
+                if (Input.GetKey(KeyCode.D)) input.x += 1;
+                if (input.x != 0)
+                {
+                    transform.localScale = new Vector3(input.x * -1, 1, 1);
+                }
+                if (input != Vector2.zero)
+                {
+                    input.Normalize();
+                    dir = input;
+                    isMoving = true;
+                    CheckCollision();
+                    dashing = true;
+                    dashSpeed = maxDashSpeed;
+                }
+            }
         }
     }
 
@@ -56,7 +81,20 @@ public class PlayerMove : MonoBehaviour
         if (isMoving)
         {
             CheckCollision();
-            rb.linearVelocity = dir * speed;
+
+            if (dashing)
+            {
+                rb.linearVelocity = dir * dashSpeed;
+                dashSpeed -= 0.5f;
+                if (dashSpeed <= speed)
+                {
+                    dashing = false;
+                }
+            }
+            else
+            {
+                rb.linearVelocity = dir * speed;
+            }
         }
         else
         {
@@ -67,13 +105,12 @@ public class PlayerMove : MonoBehaviour
     {
         if (Mathf.Abs(dir.x) == Mathf.Abs(dir.y))
         {
-            Vector2 dir1 = new Vector2(dir.x, 0);
-            Vector2 dir2 = new Vector2(0, dir.y);
-            RaycastHit2D hit1 = Physics2D.Raycast(transform.position, dir1, rayLength, wallLayer);
-            RaycastHit2D hit2 = Physics2D.Raycast(transform.position, dir2, rayLength, wallLayer);
-            RaycastHit2D hit3 = Physics2D.Raycast(transform.position, dir, rayLength, wallLayer);
+            Vector2 dirX = new Vector2(dir.x, 0);
+            Vector2 dirY = new Vector2(0, dir.y);
+            RaycastHit2D hitX = Physics2D.Raycast(transform.position, dirX, rayLength, wallLayer);
+            RaycastHit2D hitY = Physics2D.Raycast(transform.position, dirY, rayLength, wallLayer);
 
-            if (hit1.collider != null || hit2.collider != null || hit3.collider != null)
+            if (hitX.collider != null || hitY.collider != null)
             {
                 rb.linearVelocity = Vector2.zero;
                 isMoving = false;
