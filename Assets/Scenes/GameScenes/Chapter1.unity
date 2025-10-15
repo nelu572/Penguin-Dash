@@ -15412,6 +15412,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   speed: 9
+  rayLength: 0.53125
 --- !u!95 &2133276634
 Animator:
   serializedVersion: 7

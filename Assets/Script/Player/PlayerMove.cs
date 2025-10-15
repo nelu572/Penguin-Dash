@@ -1,3 +1,5 @@
+using System;
+using System.IO.Compression;
 using UnityEngine;
 
 public class PlayerMove : MonoBehaviour
@@ -11,6 +13,8 @@ public class PlayerMove : MonoBehaviour
     private Vector2 dir;
     private bool isMoving = false;
 
+    [SerializeField] private float rayLength = 1.0625f;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -20,7 +24,7 @@ public class PlayerMove : MonoBehaviour
 
     private void Update()
     {
-        if (rb.linearVelocity == Vector2.zero)
+        if (!isMoving)
         {
             anima.SetBool("Walk", false);
 
@@ -38,6 +42,7 @@ public class PlayerMove : MonoBehaviour
                 input.Normalize();
                 dir = input;
                 isMoving = true;
+                CheckCollision();
             }
         }
         else
@@ -50,6 +55,7 @@ public class PlayerMove : MonoBehaviour
     {
         if (isMoving)
         {
+            CheckCollision();
             rb.linearVelocity = dir * speed;
         }
         else
@@ -57,14 +63,31 @@ public class PlayerMove : MonoBehaviour
             rb.linearVelocity = Vector2.zero;
         }
     }
-
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void CheckCollision()
     {
-        Debug.Log("충돌");
-        if (((1 << collision.gameObject.layer) & wallLayer) != 0)
+        if (Mathf.Abs(dir.x) == Mathf.Abs(dir.y))
         {
-            isMoving = false;
-            rb.linearVelocity = Vector2.zero;
+            Vector2 dir1 = new Vector2(dir.x, 0);
+            Vector2 dir2 = new Vector2(0, dir.y);
+            RaycastHit2D hit1 = Physics2D.Raycast(transform.position, dir1, rayLength, wallLayer);
+            RaycastHit2D hit2 = Physics2D.Raycast(transform.position, dir2, rayLength, wallLayer);
+            RaycastHit2D hit3 = Physics2D.Raycast(transform.position, dir, rayLength, wallLayer);
+
+            if (hit1.collider != null || hit2.collider != null || hit3.collider != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+                isMoving = false;
+            }
+        }
+        else
+        {
+            RaycastHit2D hit = Physics2D.Raycast(transform.position, dir, rayLength, wallLayer);
+
+            if (hit.collider != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+                isMoving = false;
+            }
         }
     }
 }
